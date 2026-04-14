@@ -1,0 +1,28 @@
+{{- if and .Values.ingress.executor.enabled (eq .Values.ingress.controller "gatewayapi") }}
+apiVersion: gateway.networking.k8s.io/{{ .Values.ingress.gatewayapi.apiVersion }}
+kind: HTTPRoute
+metadata:
+  name: {{ .Values.name }}-executor
+  labels:
+    app: {{ .Values.name }}-executor
+{{- with .Values.ingress.executor.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+{{- with .Values.ingress.executor.domain }}
+  hostnames:
+    - {{ . | quote }}
+{{- end }}
+{{- with .Values.ingress.gatewayapi.gateways}}
+  parentRefs: {{- . | toYaml | nindent 4 }}
+{{- end }}
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: {{ .Values.ingress.executor.path  }}
+    backendRefs:
+    - name: {{ .Values.name }}-executor-service
+      port: 8090
+{{- end }}

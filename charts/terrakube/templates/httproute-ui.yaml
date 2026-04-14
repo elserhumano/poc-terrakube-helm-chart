@@ -1,0 +1,28 @@
+{{- if and .Values.ingress.ui.enabled (eq .Values.ingress.controller "gatewayapi") }}
+apiVersion: gateway.networking.k8s.io/{{ .Values.ingress.gatewayapi.apiVersion }}
+kind: HTTPRoute
+metadata:
+  name: {{ .Values.name }}-ui
+  labels:
+    app: {{ .Values.name }}-ui
+{{- with .Values.ingress.ui.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+{{- with .Values.ingress.ui.domain }}
+  hostnames:
+    - {{ . | quote }}
+{{- end }}
+{{- with .Values.ingress.gatewayapi.gateways}}
+  parentRefs: {{- . | toYaml | nindent 4 }}
+{{- end }}
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: {{ .Values.ingress.ui.path  }}
+    backendRefs:
+    - name: {{ .Values.name }}-ui-service
+      port: 8080
+{{- end }}

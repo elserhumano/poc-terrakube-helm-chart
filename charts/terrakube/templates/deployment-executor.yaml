@@ -1,0 +1,130 @@
+{{- if .Values.executor.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: terrakube-executor
+  labels:
+    {{- include "terrakube.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.executor.replicaCount }}
+  revisionHistoryLimit: {{ .Values.executor.revisionHistoryLimit | default 3 }}
+  selector:
+    matchLabels:
+      {{- include "terrakube-executor.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "terrakube-executor.labels" . | nindent 8 }}
+        {{- with .Values.executor.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/secrets-executor.yaml") . | sha256sum }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configMap-executor.yaml") . | sha256sum }}
+{{- if .Values.executor.otel.enabled }}
+        checksum/otel-config: {{ include (print $.Template.BasePath "/otel-executor.yaml") . | sha256sum }}
+{{- end }}
+        {{- with .Values.executor.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.executor.imagePullSecrets | default .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.executor.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      containers:
+      - name: terrakube-executor
+        image: {{ .Values.executor.image }}:{{ default .Chart.AppVersion .Values.executor.version }}
+        {{- if .Values.executor.resources }}
+        resources: {{- toYaml .Values.executor.resources | nindent 12 }}
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: 8090
+        {{- if and .Values.executor.otel.enabled .Values.executor.otel.metrics }}
+        - name: metrics
+          containerPort: {{ .Values.executor.otel.metrics.port | default "9464" }}
+        {{- end }}
+        env:
+        {{- if .Values.security.caCerts }}
+        - name: SERVICE_BINDING_ROOT
+          value: /mnt/platform/bindings
+        {{- end }}
+        {{- with .Values.executor.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.security.caCerts }}
+        - name: ca-certs
+          mountPath: /mnt/platform/bindings/ca-certificates
+          readOnly: true
+        {{- end }}
+        {{- with .Values.executor.volumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        envFrom:
+        {{- range .Values.executor.configMaps }}
+        - configMapRef:
+            name: {{ . | quote }}
+        {{- end }}
+        {{- if .Values.executor.otel.enabled}}
+        - configMapRef:
+            name: "terrakube-executor-otel-config"
+        {{- end }}
+        {{- range .Values.executor.secrets }}
+        - secretRef:
+            name: {{ . | quote }}
+        {{- end }}
+        startupProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8090
+          failureThreshold: {{ .Values.executor.startupProbe.failureThreshold }}
+          periodSeconds: {{ .Values.executor.startupProbe.periodSeconds }}
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8090
+          periodSeconds: {{ .Values.executor.livenessProbe.periodSeconds }}
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8090
+          periodSeconds: {{ .Values.executor.readinessProbe.periodSeconds }}
+        {{- with .Values.executor.containerSecurityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- with .Values.executor.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.executor.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.executor.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- if .Values.security.caCerts }}
+      - name: ca-certs
+        secret:
+          secretName: terrakube-ca-secrets
+      {{- end }}
+      {{- with .Values.executor.volumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.executor.serviceAccountName }}
+      serviceAccountName: {{ quote . }}
+      {{- end }}
+      {{- with .Values.executor.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{ end }}

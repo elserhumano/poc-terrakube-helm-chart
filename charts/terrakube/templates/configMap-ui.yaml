@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: terrakube-ui
+  labels:
+      {{- include "terrakube.labels" . | nindent 4 }}
+data:
+  my_server_block.conf: |
+    server {
+        listen 0.0.0.0:8080;
+        {{- if .Values.enableIPv6 }}
+        listen [::]:8080 default_server;
+        {{- end }}
+
+      location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+        try_files $uri $uri/ /index.html;
+      }
+    }

@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: terrakube-ldap-init
+  namespace: {{ .Release.Namespace }}
+data:
+  init.ldif: |
+    dn: ou=users,dc=example,dc=org
+    objectClass: organizationalUnit
+    ou: users
+
+    dn: ou=Groups,dc=example,dc=org
+    objectClass: organizationalUnit
+    ou: Groups
+
+    dn: cn=admin-terrakube,ou=users,dc=example,dc=org
+    objectClass: inetOrgPerson
+    objectClass: person
+    cn: admin-terrakube
+    sn: Admin
+    mail: admin@example.org
+    userPassword: Admin1234!
+
+    dn: cn=TERRAKUBE_ADMIN,ou=Groups,dc=example,dc=org
+    objectClass: groupOfNames
+    cn: TERRAKUBE_ADMIN
+    member: cn=admin-terrakube,ou=users,dc=example,dc=org
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: terrakube-ldap-init
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: ldap-init
+        image: bitnamilegacy/openldap:latest
+        command:
+        - bash
+        - -c
+        - |
+          set -e
+          echo "Esperando que OpenLDAP este listo..."
+          until ldapsearch -x \
+            -H ldap://terrakube-openldap-service:1389 \
+            -D "cn=admin,dc=example,dc=org" \
+            -w admin \
+            -b "dc=example,dc=org" \
+            "(objectClass=top)" > /dev/null 2>&1; do
+            echo "LDAP no disponible todavia, reintentando en 5s..."
+            sleep 5
+          done
+
+          echo "Verificando si los datos ya existen..."
+          RESULT=$(ldapsearch -x \
+            -H ldap://terrakube-openldap-service:1389 \
+            -D "cn=admin,dc=example,dc=org" \
+            -w admin \
+            -b "ou=users,dc=example,dc=org" \
+            "(objectClass=organizationalUnit)" 2>&1 || true)
+
+          if echo "$RESULT" | grep -q "ou=users"; then
+            echo "Los datos ya existen, no se vuelven a cargar."
+          else
+            echo "Cargando estructura y usuarios iniciales..."
+            ldapadd -x \
+              -H ldap://terrakube-openldap-service:1389 \
+              -D "cn=admin,dc=example,dc=org" \
+              -w admin \
+              -f /ldif/init.ldif
+            echo "Datos cargados exitosamente."
+          fi
+        volumeMounts:
+        - name: ldif
+          mountPath: /ldif
+      volumes:
+      - name: ldif
+        configMap:
+          name: terrakube-ldap-init

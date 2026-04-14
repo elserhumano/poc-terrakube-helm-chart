@@ -1,0 +1,29 @@
+{{- if and .Values.ingress.registry.enabled (eq .Values.ingress.controller "gatewayapi") }}
+apiVersion: gateway.networking.k8s.io/{{ .Values.ingress.gatewayapi.apiVersion }}
+kind: HTTPRoute
+metadata:
+  name: {{ .Values.name }}-registry
+  labels:
+    app: {{ .Values.name }}-registry
+{{- with .Values.ingress.registry.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+{{- with .Values.ingress.registry.domain }}
+  hostnames:
+    - {{ . | quote }}
+{{- end }}
+{{- with .Values.ingress.gatewayapi.gateways}}
+  parentRefs: {{- . | toYaml | nindent 4 }}
+{{- end }}
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: {{ .Values.ingress.registry.path  }}
+    backendRefs:
+    - name: {{ .Values.name }}-registry-service
+      port: 8075
+{{- end }}
+

@@ -1,0 +1,130 @@
+{{- if .Values.registry.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: terrakube-registry
+  labels:
+    {{- include "terrakube.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.registry.replicaCount }}
+  revisionHistoryLimit: {{ .Values.registry.revisionHistoryLimit | default 3 }}
+  selector:
+    matchLabels:
+      {{- include "terrakube-registry.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "terrakube-registry.labels" . | nindent 8 }}
+        {{- with .Values.registry.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- with .Values.registry.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        checksum/config: {{ include (print $.Template.BasePath "/secrets-registry.yaml") . | sha256sum }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configMap-registry.yaml") . | sha256sum }}
+{{- if .Values.registry.otel.enabled }}
+        checksum/otel-config: {{ include (print $.Template.BasePath "/otel-registry.yaml") . | sha256sum }}
+{{- end }}
+    spec:
+      {{- with .Values.registry.imagePullSecrets | default .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.registry.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      containers:
+      - name: terrakube-registry
+        image: {{ .Values.registry.image }}:{{ default .Chart.AppVersion .Values.registry.version }}
+        {{- if .Values.registry.resources }}
+        resources: {{- toYaml .Values.registry.resources | nindent 12 }}
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: 8075
+        {{- if and .Values.registry.otel.enabled .Values.registry.otel.metrics }}
+        - name: metrics
+          containerPort: {{ .Values.registry.otel.metrics.port | default "9464" }}
+        {{- end }}
+        env:
+        {{- if .Values.security.caCerts }}
+        - name: SERVICE_BINDING_ROOT
+          value: /mnt/platform/bindings
+        {{- end }}
+        {{- with .Values.registry.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.security.caCerts }}
+        - name: ca-certs
+          mountPath: /mnt/platform/bindings/ca-certificates
+          readOnly: true
+        {{- end }}
+        {{- with .Values.registry.volumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        envFrom:
+        {{- range .Values.registry.configMaps }}
+        - configMapRef:
+            name: {{ . | quote }}
+        {{- end }}
+        {{- if .Values.registry.otel.enabled}}
+        - configMapRef:
+            name: "terrakube-registry-otel-config"
+        {{- end }}
+        {{- range .Values.registry.secrets }}
+        - secretRef:
+            name: {{ . | quote }}
+        {{- end }}
+        startupProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8075
+          failureThreshold: {{ .Values.registry.startupProbe.failureThreshold }}
+          periodSeconds: {{ .Values.registry.startupProbe.periodSeconds }}
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8075
+          periodSeconds: {{ .Values.registry.livenessProbe.periodSeconds }}
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8075
+          periodSeconds: {{ .Values.registry.readinessProbe.periodSeconds }}
+        {{- with .Values.registry.containerSecurityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- with .Values.registry.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.registry.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.registry.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- if .Values.security.caCerts }}
+      - name: ca-certs
+        secret:
+          secretName: terrakube-ca-secrets
+      {{- end }}
+      {{- with .Values.registry.volumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.registry.serviceAccountName }}
+      serviceAccountName: {{ quote . }}
+      {{- end }}
+      {{- with .Values.registry.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{ end }}
