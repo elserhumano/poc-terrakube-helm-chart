@@ -1,14 +1,14 @@
 ## =============================================================
 ## Terrakube Helm Chart — values.yaml para K3s con Traefik
-## IP de la VM: 192.168.167.40  |  dominio: .laptop
+## IP de la VM: 192.168.167.40  |  dominio: .local
 ## Ingress: Traefik nativo de K3s (NO nginx)
 ## TLS: deshabilitado (consistentemente) para el POC
 ##
 ## ANTES DE INSTALAR:
 ##   1. Agregar en /etc/hosts de la VM Y de Windows:
-##        192.168.167.40  terrakube-ui.laptop
-##        192.168.167.40  terrakube-api.laptop
-##        192.168.167.40  terrakube-reg.laptop
+##        192.168.167.40  terrakube-ui.local
+##        192.168.167.40  terrakube-api.local
+##        192.168.167.40  terrakube-reg.local
 ##
 ##   2. Verificar que Traefik tenga EXTERNAL-IP asignada:
 ##        kubectl get svc -n kube-system traefik
@@ -43,7 +43,7 @@ security:
   dexClientId: "example-app"
   dexClientScope: "email openid profile offline_access groups"
   ## CRITICO: usar http:// — debe coincidir con el issuer de DEX
-  dexIssuerUri: "http://terrakube-api.laptop/dex"
+  dexIssuerUri: "http://terrakube-api.local/dex"
   existingSecret: false
   ldapConfigSecretName: terrakube-openldap-secrets
 
@@ -77,7 +77,7 @@ dex:
   revisionHistoryLimit: 3
   config:
     ## CRITICO: http:// — nunca https:// si el ingress API no tiene TLS
-    issuer: http://terrakube-api.laptop/dex
+    issuer: http://terrakube-api.local/dex
 
     storage:
       type: memory
@@ -121,7 +121,7 @@ dex:
     - id: example-app
       redirectURIs:
       ## CRITICO: http:// — coincide con dominio UI sin TLS
-      - 'http://terrakube-ui.laptop'
+      - 'http://terrakube-ui.local'
       - '/device/callback'
       - 'http://localhost:10000/login'
       - 'http://localhost:10001/login'
@@ -238,7 +238,7 @@ api:
       host: "0.0.0.0"
     traces:
       type: ""
-      endpoint: "http://terrakube-api.laptop:9411/api/v2/spans"
+      endpoint: "http://terrakube-api.local:9411/api/v2/spans"
   rbac:
     create: false
     roleName: "terrakube-api-role"
@@ -313,7 +313,7 @@ executor:
       host: "0.0.0.0"
     traces:
       type: jaeger
-      endpoint: "http://terrakube-api.laptop:9411/api/v2/spans"
+      endpoint: "http://terrakube-api.local:9411/api/v2/spans"
   resources: {}
   podLabels: {}
   podAnnotations: {}
@@ -357,7 +357,7 @@ registry:
       host: "0.0.0.0"
     traces:
       type: jaeger
-      endpoint: "http://terrakube-api.laptop:9411/api/v2/spans"
+      endpoint: "http://terrakube-api.local:9411/api/v2/spans"
   resources: {}
   podAnnotations: {}
   podLabels: {}
@@ -427,7 +427,7 @@ ingress:
 
   ui:
     enabled: true
-    domain: "terrakube-ui.laptop"
+    domain: "terrakube-ui.local"
     path: "/"
     pathType: "Prefix"
     ingressClassName: "traefik"
@@ -439,7 +439,7 @@ ingress:
 
   api:
     enabled: true
-    domain: "terrakube-api.laptop"
+    domain: "terrakube-api.local"
     path: "/"
     pathType: "Prefix"
     ingressClassName: "traefik"
@@ -450,7 +450,7 @@ ingress:
 
   registry:
     enabled: true
-    domain: "terrakube-reg.laptop"
+    domain: "terrakube-reg.local"
     path: "/"
     pathType: "Prefix"
     ingressClassName: "traefik"
@@ -469,7 +469,7 @@ ingress:
 
   executor:
     enabled: false
-    domain: "terrakube-executor.laptop"
+    domain: "terrakube-executor.local"
     path: "/"
     pathType: "Prefix"
     ingressClassName: "traefik"
