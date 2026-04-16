@@ -433,9 +433,9 @@ ingress:
     ingressClassName: "traefik"
     ## CRITICO: false — debe coincidir con api y dex issuer (http://)
     useTls: false
-    annotations: {}
-    ## nginx annotations comentadas — Traefik las ignora
-    # nginx.ingress.kubernetes.io/use-regex: "true"
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: web
+      traefik.ingress.kubernetes.io/router.tls: "false"
 
   api:
     enabled: true
@@ -444,9 +444,9 @@ ingress:
     pathType: "Prefix"
     ingressClassName: "traefik"
     useTls: false
-    annotations: {}
-    ## nginx annotations comentadas — Traefik las ignora
-    # nginx.ingress.kubernetes.io/use-regex: "true"
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: web
+      traefik.ingress.kubernetes.io/router.tls: "false"
 
   registry:
     enabled: true
