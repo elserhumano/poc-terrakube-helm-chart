@@ -457,16 +457,12 @@ ingress:
     ingressClassName: "traefik"
     useTls: false
     annotations: {}
-    ## nginx annotations comentadas — Traefik las ignora
-    # nginx.ingress.kubernetes.io/use-regex: "true"
 
   dex:
     enabled: true
     path: "/dex/"
     pathType: "Prefix"
     annotations: {}
-    ## nginx annotations comentadas — Traefik las ignora
-    # nginx.ingress.kubernetes.io/use-regex: "true"
 
   executor:
     enabled: false
