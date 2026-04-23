@@ -234,6 +234,22 @@ api:
   serviceAnnotations: {}
   revisionHistoryLimit: 3
   automountServiceAccountToken: true
+  env:
+  - name: SERVICE_BINDING_ROOT
+    value: /mnt/platform/bindings
+  volumes:
+  - name: ca-certs
+    secret:
+      secretName: terrakube-ca-secrets
+      items:
+      - key: "terrakube-ca.pem"
+        path: "terrakube-ca.pem"
+      - key: "type"
+        path: "type"
+  volumeMounts:
+  - name: ca-certs
+    mountPath: /mnt/platform/bindings/ca-certificates
+    readOnly: true
   dynamicCredentials:
     enabled: false
     publicKey: ""
@@ -306,6 +322,22 @@ api:
 executor:
   existingSecret: false
   enabled: true
+  env:
+  - name: SERVICE_BINDING_ROOT
+    value: /mnt/platform/bindings
+  volumes:
+  - name: ca-certs
+    secret:
+      secretName: terrakube-ca-secrets
+      items:
+      - key: "terrakube-ca.pem"
+        path: "terrakube-ca.pem"
+      - key: "type"
+        path: "type"
+  volumeMounts:
+  - name: ca-certs
+    mountPath: /mnt/platform/bindings/ca-certificates
+    readOnly: true
   image: "azbuilder/executor"
   version: ""
   replicaCount: "1"
@@ -347,6 +379,22 @@ executor:
 ## Registry
 ## ---------------------------------------------------------------
 registry:
+  enabled: true
+  env:
+  - name: SERVICE_BINDING_ROOT
+    value: /mnt/platform/bindings
+  volumes:
+  - name: ca-certs
+    secret:
+      secretName: terrakube-ca-secrets
+      items:
+      - key: "terrakube-ca.pem"
+        path: "terrakube-ca.pem"
+      - key: "type"
+        path: "type"
+  volumeMounts:
+  - name: ca-certs
+    mountPath: /mnt/platform/bindings/ca-certificates
     readOnly: true
   existingSecret: false
   image: azbuilder/open-registry
