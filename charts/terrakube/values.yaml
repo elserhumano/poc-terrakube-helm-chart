@@ -43,7 +43,7 @@ security:
   dexClientId: "example-app"
   dexClientScope: "email openid profile offline_access groups"
   ## CRITICO: usar http:// — debe coincidir con el issuer de DEX
-  dexIssuerUri: "https://terrakube-api.local/dex"
+  dexIssuerUri: "http://terrakube-api.local/dex"
   existingSecret: false
   ldapConfigSecretName: terrakube-openldap-secrets
 
