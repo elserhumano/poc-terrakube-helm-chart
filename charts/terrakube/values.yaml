@@ -42,10 +42,21 @@ security:
   internalSecret: "AxxPdgpCi72f8WhMXCTGhtfMRp6AuBfj"   # 32 chars — OK
   dexClientId: "example-app"
   dexClientScope: "email openid profile offline_access groups"
-  ## CRITICO: usar http:// — debe coincidir con el issuer de DEX
-  dexIssuerUri: "http://terrakube-api.local/dex"
+  dexIssuerUri: "https://terrakube-api.local/dex"
   existingSecret: false
   ldapConfigSecretName: terrakube-openldap-secrets
+  caCerts:
+    terrakube-ca.pem: |
+      -----BEGIN CERTIFICATE-----
+      MIIBbzCCARSgAwIBAgIQUrFLc/tnMIjDnESOBDEcCDAKBggqhkjOPQQDAjAXMRUw
+      EwYDVQQDEwx0ZXJyYWt1YmUtY2EwHhcNMjYwNDIzMDkyOTQ2WhcNMjYwNzIyMDky
+      OTQ2WjAXMRUwEwYDVQQDEwx0ZXJyYWt1YmUtY2EwWTATBgcqhkjOPQIBBggqhkjO
+      PQMBBwNCAARYQo3Wr4ymHRB3SbmUXIQnHrGpklHQeDNuBZmKUa1Bbx3uhXiWTBXQ
+      GAvl7TijG4+DewU0qjkyjzNRQL1GnLTAo0IwQDAOBgNVHQ8BAf8EBAMCAqQwDwYD
+      VR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUtsKCyo6Br/mhZJBjrtLAm63j1qEwCgYI
+      KoZIzj0EAwIDSQAwRgIhAJ+UAoqjKHNznvBWeTxvwI67GO+yV1UHlW3UcbosWtUz
+      AiEA9rfWWn+u7u8/1XLoSiY92rkbwDG3RfgFoIXpjdH1/Dc=
+      -----END CERTIFICATE-----
 
 ## ---------------------------------------------------------------
 ## OpenLDAP
@@ -223,6 +234,22 @@ api:
   serviceAnnotations: {}
   revisionHistoryLimit: 3
   automountServiceAccountToken: true
+  env:
+  - name: SERVICE_BINDING_ROOT
+    value: /mnt/platform/bindings
+  volumes:
+  - name: ca-certs
+    secret:
+      secretName: terrakube-ca-secrets
+      items:
+      - key: "terrakube-ca.pem"
+        path: "terrakube-ca.pem"
+      - key: "type"
+        path: "type"
+  volumeMounts:
+  - name: ca-certs
+    mountPath: /mnt/platform/bindings/ca-certificates
+    readOnly: true
   dynamicCredentials:
     enabled: false
     publicKey: ""
@@ -295,6 +322,22 @@ api:
 executor:
   existingSecret: false
   enabled: true
+  env:
+  - name: SERVICE_BINDING_ROOT
+    value: /mnt/platform/bindings
+  volumes:
+  - name: ca-certs
+    secret:
+      secretName: terrakube-ca-secrets
+      items:
+      - key: "terrakube-ca.pem"
+        path: "terrakube-ca.pem"
+      - key: "type"
+        path: "type"
+  volumeMounts:
+  - name: ca-certs
+    mountPath: /mnt/platform/bindings/ca-certificates
+    readOnly: true
   image: "azbuilder/executor"
   version: ""
   replicaCount: "1"
@@ -337,6 +380,22 @@ executor:
 ## ---------------------------------------------------------------
 registry:
   enabled: true
+  env:
+  - name: SERVICE_BINDING_ROOT
+    value: /mnt/platform/bindings
+  volumes:
+  - name: ca-certs
+    secret:
+      secretName: terrakube-ca-secrets
+      items:
+      - key: "terrakube-ca.pem"
+        path: "terrakube-ca.pem"
+      - key: "type"
+        path: "type"
+  volumeMounts:
+  - name: ca-certs
+    mountPath: /mnt/platform/bindings/ca-certificates
+    readOnly: true
   existingSecret: false
   image: azbuilder/open-registry
   version: ""
