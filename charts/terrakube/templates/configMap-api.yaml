@@ -9,7 +9,7 @@ data:
   GroupValidationType: 'DEX'
   UserValidationType: 'DEX'
   AuthenticationValidationType: 'DEX'
-  DexIssuerUri: '{{ .Values.dex.config.issuer }}'
+  DexIssuerUri: '{{ .Values.security.dexIssuerUri }}'
   TerrakubeToolsRepository: '{{ .Values.executor.properties.toolsRepository }}'
   TerrakubeToolsBranch: '{{ .Values.executor.properties.toolsBranch }}'
   TerrakubeHostname: '{{ .Values.ingress.api.domain }}'
