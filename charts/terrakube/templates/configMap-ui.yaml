@@ -12,6 +12,12 @@ data:
         listen [::]:8080 default_server;
         {{- end }}
 
+        gzip on;
+        gzip_vary on;
+        gzip_min_length 1024;
+        gzip_types text/plain text/css application/json application/javascript text/javascript;
+        gzip_comp_level 6;
+
       location / {
         root   /usr/share/nginx/html;
         index  index.html index.htm;
