@@ -43,7 +43,7 @@ security:
   dexClientId: "example-app"
   dexClientScope: "email openid profile offline_access groups"
   ## CRITICO: usar http:// — debe coincidir con el issuer de DEX
-  dexIssuerUri: "http://terrakube-api.local/dex"
+  dexIssuerUri: "https://terrakube-api.local/dex"
   existingSecret: false
   ldapConfigSecretName: terrakube-openldap-secrets
 
@@ -76,8 +76,7 @@ dex:
   existingSecret: false
   revisionHistoryLimit: 3
   config:
-    ## CRITICO: http:// — nunca https:// si el ingress API no tiene TLS
-    issuer: http://terrakube-api.local/dex
+    issuer: https://terrakube-api.local/dex
 
     storage:
       type: memory
@@ -120,8 +119,7 @@ dex:
     staticClients:
     - id: example-app
       redirectURIs:
-      ## CRITICO: http:// — coincide con dominio UI sin TLS
-      - 'http://terrakube-ui.local'
+      - 'https://terrakube-ui.local'
       - '/device/callback'
       - 'http://localhost:10000/login'
       - 'http://localhost:10001/login'
@@ -416,8 +414,8 @@ ui:
 ## ---------------------------------------------------------------
 ingress:
   ## CRITICO: false — no hay TLS en ningún servicio para el POC
-  useTls: false
-  includeTlsHosts: false
+  useTls: true
+  includeTlsHosts: true
   controller: "generic"
 
   gatewayapi:
@@ -432,11 +430,9 @@ ingress:
     path: "/"
     pathType: "Prefix"
     ingressClassName: "traefik"
-    ## CRITICO: false — debe coincidir con api y dex issuer (http://)
-    useTls: false
-    annotations:
-      traefik.ingress.kubernetes.io/router.entrypoints: web
-      traefik.ingress.kubernetes.io/router.tls: "false"
+    useTls: true
+    tlsSecretName: terrakube-tls-secret
+    annotations: {}
 
   api:
     enabled: true
@@ -444,10 +440,9 @@ ingress:
     path: "/"
     pathType: "Prefix"
     ingressClassName: "traefik"
-    useTls: false
-    annotations:
-      traefik.ingress.kubernetes.io/router.entrypoints: web
-      traefik.ingress.kubernetes.io/router.tls: "false"
+    useTls: true
+    tlsSecretName: terrakube-tls-secret
+    annotations: {}
 
   registry:
     enabled: true
@@ -455,7 +450,8 @@ ingress:
     path: "/"
     pathType: "Prefix"
     ingressClassName: "traefik"
-    useTls: false
+    useTls: true
+    tlsSecretName: terrakube-tls-secret
     annotations: {}
 
   dex:
@@ -470,7 +466,7 @@ ingress:
     path: "/"
     pathType: "Prefix"
     ingressClassName: "traefik"
-    useTls: false
+    useTls: true
     annotations: {}
 
   ## AWS — deshabilitado para K3s
