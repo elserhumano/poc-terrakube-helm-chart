@@ -299,6 +299,17 @@ api:
     redisPort: "6379"
     executorUrl: "http://terrakube-executor-service:8090"
     corsAllowedOrigins: "https://terrakube-ui.local"
+  extraEnv:
+    - name: spring_profiles_active
+      value: "postgresql"
+    - name: SECURITY_IGNORED
+      value: "/.well-known/terraform.json,/api/v1/dependency/**"
+    - name: TERRAKUBE_HOSTNAME
+      value: "terrakube-api.local"
+  hostAliases:
+    - ip: "10.168.168.51"
+      hostnames:
+        - "terrakube-api.local"
 
 ## ---------------------------------------------------------------
 ## Executor
