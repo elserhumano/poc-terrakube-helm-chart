@@ -347,7 +347,7 @@ executor:
 ## Registry
 ## ---------------------------------------------------------------
 registry:
-    readOnly: true
+  enabled: true
   existingSecret: false
   image: azbuilder/open-registry
   version: ""
